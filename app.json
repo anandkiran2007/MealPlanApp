@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Meal Planner",
+    "slug": "meal-planner-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "https://raw.githubusercontent.com/expo/expo/master/templates/expo-template-blank/assets/icon.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "https://raw.githubusercontent.com/expo/expo/master/templates/expo-template-blank/assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mealplanner.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "https://raw.githubusercontent.com/expo/expo/master/templates/expo-template-blank/assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.mealplanner.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "https://raw.githubusercontent.com/expo/expo/master/templates/expo-template-blank/assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    }
+  }
+}
