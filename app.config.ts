@@ -29,15 +29,22 @@ const config: ExpoConfig = {
     bundler: 'metro',
     output: 'static',
     favicon: './assets/images/favicon.png',
-    // Add web-specific optimizations
     build: {
       babel: {
         dangerouslyAddModulePathsToTranspile: [
           '@supabase/supabase-js',
-          '@expo/vector-icons'
+          '@expo/vector-icons',
+          'react-native-reanimated',
+          '@react-native-async-storage/async-storage'
         ]
       }
-    }
+    },
+    backgroundColor: '#ffffff',
+    name: 'Meal Planner',
+    themeColor: '#ffffff',
+    lang: 'en',
+    startUrl: '/',
+    display: 'standalone'
   },
   plugins: [
     'expo-router',

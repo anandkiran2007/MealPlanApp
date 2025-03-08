@@ -159,7 +159,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 16,
     color: '#64748B',
     marginTop: 16,
@@ -171,7 +170,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   errorText: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 16,
     color: '#EF4444',
     textAlign: 'center',
@@ -184,7 +182,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
-    fontFamily: 'Poppins-Medium',
     fontSize: 14,
     color: '#FFFFFF',
   },
@@ -211,7 +208,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 40,
-    fontFamily: 'Poppins-Regular',
     fontSize: 14,
     color: '#1E293B',
   },
@@ -246,7 +242,6 @@ const styles = StyleSheet.create({
     borderColor: '#22C55E',
   },
   tagText: {
-    fontFamily: 'Poppins-Medium',
     fontSize: 13,
     color: '#64748B',
   },
@@ -265,14 +260,12 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyTitle: {
-    fontFamily: 'Poppins-SemiBold',
     fontSize: 18,
     color: '#1E293B',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyDescription: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 14,
     color: '#64748B',
     textAlign: 'center',

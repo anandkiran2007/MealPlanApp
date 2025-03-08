@@ -77,6 +77,17 @@ CREATE POLICY "Creator can update recipes"
     OR created_by IS NULL -- Allow updating system-generated recipes
   );
 
+-- Create indexes for efficient recipe querying
+CREATE INDEX IF NOT EXISTS idx_recipes_tags ON recipes USING GIN (tags);
+CREATE INDEX IF NOT EXISTS idx_recipes_diet_type ON recipes USING GIN (diet_type);
+CREATE INDEX IF NOT EXISTS idx_recipes_rating ON recipes (rating DESC);
+CREATE INDEX IF NOT EXISTS idx_recipes_prep_time ON recipes (prep_time);
+CREATE INDEX IF NOT EXISTS idx_recipes_calories ON recipes (calories);
+
+-- Create composite indexes for common query patterns
+CREATE INDEX IF NOT EXISTS idx_recipes_diet_rating ON recipes USING btree (rating DESC) INCLUDE (diet_type);
+CREATE INDEX IF NOT EXISTS idx_recipes_tags_rating ON recipes USING btree (rating DESC) INCLUDE (tags);
+
 -- Update existing recipes with proper JSONB format
 UPDATE recipes SET
   ingredients = COALESCE(ingredients, '[]'::jsonb),

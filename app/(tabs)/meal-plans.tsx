@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Calendar, ChevronRight, Filter, Plus, Sparkles } from 'lucide-react-native';
 import Header from '../../components/Header';
 import Button from '../../components/Button';
-import { mockMealPlans } from '../../data/mockData';
+import { useMealPlanStore } from '../../store/mealPlanStore';
 
 export default function MealPlansScreen() {
   const router = useRouter();
+  const { mealPlans, loading, error, fetchMealPlans } = useMealPlanStore();
   const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    fetchMealPlans();
+  }, []);
 
   const handleGenerateMealPlan = () => {
     setIsGenerating(true);
@@ -62,7 +67,7 @@ export default function MealPlansScreen() {
 
           <Text style={styles.sectionTitle}>Your Meal Plans</Text>
           
-          {mockMealPlans.map((plan) => (
+          {mealPlans.map((plan) => (
             <TouchableOpacity 
               key={plan.id} 
               style={styles.mealPlanCard}

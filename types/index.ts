@@ -1,11 +1,11 @@
 export interface Recipe {
   id: string;
   title: string;
+  description: string;
   image: string;
   time: string;
   calories: string;
   servings: number;
-  description: string;
   ingredients: string[];
   instructions: string[];
   nutrition: {
@@ -15,13 +15,24 @@ export interface Recipe {
     fiber: string;
   };
   tags: string[];
+  rating: number;
+  dietType: string[];
+  prepTime: number;
 }
 
 export interface MealPlan {
   id: string;
   title: string;
   description: string;
-  days: MealPlanDay[];
+  days: {
+    day: string;
+    meals: {
+      breakfast: Recipe;
+      lunch: Recipe;
+      dinner: Recipe;
+      snacks: Recipe[];
+    };
+  }[];
   nutritionGoals: {
     calories: string;
     protein: string;

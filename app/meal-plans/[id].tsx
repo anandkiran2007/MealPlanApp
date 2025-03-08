@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
-import { Calendar, ChevronDown, ChevronUp, Clock, Flame, Users, ArrowLeft } from 'lucide-react-native';
+import { Clock, Users, ChefHat } from 'lucide-react-native';
 import Header from '../../components/Header';
 import Button from '../../components/Button';
 import { useMealPlanStore } from '../../store/mealPlanStore';
 import { Recipe } from '../../types';
+import { RecipeCard } from '../../components/RecipeCard';
 
 export default function MealPlanDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [expandedDays, setExpandedDays] = useState<string[]>(['Monday']);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const mealPlan = useMealPlanStore(state => state.currentPlan);
+  const { mealPlans } = useMealPlanStore();
+  const mealPlan = mealPlans.find(plan => plan.id === id);
 
   useEffect(() => {
     if (!mealPlan && id) {
@@ -44,6 +45,7 @@ export default function MealPlanDetailScreen() {
             <Button 
               title="Go to Meal Plans" 
               style={styles.errorButton}
+              onPress={() => {}}
             />
           </Link>
         </View>
@@ -51,50 +53,22 @@ export default function MealPlanDetailScreen() {
     );
   }
 
-  const toggleDay = (day: string) => {
-    if (expandedDays.includes(day)) {
-      setExpandedDays(expandedDays.filter(d => d !== day));
-    } else {
-      setExpandedDays([...expandedDays, day]);
-    }
-  };
-
-  const addAllToShoppingList = () => {
-    router.push('/shopping');
-  };
-
-  const RecipeCard = ({ recipe }: { recipe: Recipe }) => (
-    <TouchableOpacity 
-      style={styles.recipeCard}
-      onPress={() => setSelectedRecipe(recipe)}
-    >
-      <Image 
-        source={{ uri: recipe.image }}
-        style={styles.recipeImage}
-        defaultSource={{ uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c' }}
-      />
-      <View style={styles.recipeContent}>
-        <Text style={styles.recipeTitle}>{recipe.title}</Text>
-        <View style={styles.recipeInfo}>
-          <View style={styles.infoItem}>
-            <Clock size={16} color="#64748B" />
-            <Text style={styles.infoText}>{recipe.time}</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <Flame size={16} color="#64748B" />
-            <Text style={styles.infoText}>{recipe.calories}</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <Users size={16} color="#64748B" />
-            <Text style={styles.infoText}>{recipe.servings} servings</Text>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
   const RecipeModal = ({ recipe }: { recipe: Recipe | null }) => {
     if (!recipe) return null;
+
+    // Clean the ingredients array - remove quotes and brackets
+    const cleanIngredients = (ingredients: string[]) => {
+      return ingredients.map(ingredient => {
+        return ingredient.replace(/[\[\]"]/g, '').trim();
+      });
+    };
+
+    // Clean the instructions array
+    const cleanInstructions = (instructions: string[]) => {
+      return instructions.map(instruction => {
+        return instruction.replace(/[\[\]"]/g, '').trim();
+      });
+    };
 
     return (
       <View style={styles.modalContainer}>
@@ -122,7 +96,7 @@ export default function MealPlanDetailScreen() {
                 <Text style={styles.modalInfoText}>{recipe.time}</Text>
               </View>
               <View style={styles.modalInfoItem}>
-                <Flame size={20} color="#64748B" />
+                <ChefHat size={20} color="#64748B" />
                 <Text style={styles.modalInfoText}>{recipe.calories}</Text>
               </View>
               <View style={styles.modalInfoItem}>
@@ -131,9 +105,9 @@ export default function MealPlanDetailScreen() {
               </View>
             </View>
 
-            <View style={styles.nutritionContainer}>
+            <View style={styles.modalNutritionContainer}>
               <Text style={styles.sectionTitle}>Nutrition</Text>
-              <View style={styles.nutritionGrid}>
+              <View style={styles.modalNutritionGrid}>
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionValue}>{recipe.nutrition.protein}</Text>
                   <Text style={styles.nutritionLabel}>Protein</Text>
@@ -155,7 +129,7 @@ export default function MealPlanDetailScreen() {
 
             <View style={styles.ingredientsSection}>
               <Text style={styles.sectionTitle}>Ingredients</Text>
-              {recipe.ingredients.map((ingredient, index) => (
+              {cleanIngredients(recipe.ingredients).map((ingredient, index) => (
                 <View key={index} style={styles.ingredientItem}>
                   <View style={styles.bulletPoint} />
                   <Text style={styles.ingredientText}>{ingredient}</Text>
@@ -165,7 +139,7 @@ export default function MealPlanDetailScreen() {
 
             <View style={styles.instructionsSection}>
               <Text style={styles.sectionTitle}>Instructions</Text>
-              {recipe.instructions.map((instruction, index) => (
+              {cleanInstructions(recipe.instructions).map((instruction, index) => (
                 <View key={index} style={styles.instructionItem}>
                   <View style={styles.instructionNumber}>
                     <Text style={styles.instructionNumberText}>{index + 1}</Text>
@@ -175,13 +149,15 @@ export default function MealPlanDetailScreen() {
               ))}
             </View>
 
-            <View style={styles.tagsContainer}>
-              {recipe.tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
+            {recipe.tags && recipe.tags.length > 0 && (
+              <View style={styles.tagsContainer}>
+                {recipe.tags.map((tag, index) => (
+                  <View key={index} style={styles.tag}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -189,101 +165,81 @@ export default function MealPlanDetailScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Header title="Meal Plan Details" showBack />
-      
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.iconContainer}>
-            <Calendar size={24} color="#22C55E" />
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{mealPlan.title}</Text>
+        <Text style={styles.description}>{mealPlan.description}</Text>
+      </View>
+
+      <View style={styles.nutritionSummary}>
+        <Text style={styles.sectionTitle}>Total Nutrition</Text>
+        <View style={styles.nutritionGrid}>
+          <View style={styles.nutritionItem}>
+            <Text style={styles.nutritionLabel}>Calories</Text>
+            <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.calories}</Text>
           </View>
-          <View>
-            <Text style={styles.title}>{mealPlan.title}</Text>
-            <Text style={styles.subtitle}>{mealPlan.days.length} days</Text>
+          <View style={styles.nutritionItem}>
+            <Text style={styles.nutritionLabel}>Protein</Text>
+            <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.protein}</Text>
+          </View>
+          <View style={styles.nutritionItem}>
+            <Text style={styles.nutritionLabel}>Carbs</Text>
+            <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.carbs}</Text>
+          </View>
+          <View style={styles.nutritionItem}>
+            <Text style={styles.nutritionLabel}>Fat</Text>
+            <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.fat}</Text>
           </View>
         </View>
-        
-        <View style={styles.content}>
-          <Text style={styles.description}>{mealPlan.description}</Text>
+      </View>
+
+      {mealPlan.days.map((day, index) => (
+        <View key={index} style={styles.dayContainer}>
+          <Text style={styles.dayTitle}>{day.day}</Text>
           
-          <View style={styles.nutritionContainer}>
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionLabel}>Calories</Text>
-              <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.calories}</Text>
-            </View>
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionLabel}>Protein</Text>
-              <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.protein}</Text>
-            </View>
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionLabel}>Carbs</Text>
-              <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.carbs}</Text>
-            </View>
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionLabel}>Fat</Text>
-              <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.fat}</Text>
-            </View>
+          <View style={styles.mealSection}>
+            <Text style={styles.mealTypeTitle}>Breakfast</Text>
+            <RecipeCard 
+              recipe={day.meals.breakfast} 
+              onPress={() => setSelectedRecipe(day.meals.breakfast)}
+            />
           </View>
-          
-          <Text style={styles.sectionTitle}>Daily Meal Plan</Text>
-          
-          {mealPlan.days.map((day) => (
-            <View key={day.day} style={styles.dayContainer}>
-              <TouchableOpacity 
-                style={styles.dayHeader}
-                onPress={() => toggleDay(day.day)}
-              >
-                <Text style={styles.dayTitle}>{day.day}</Text>
-                {expandedDays.includes(day.day) ? (
-                  <ChevronUp size={20} color="#64748B" />
-                ) : (
-                  <ChevronDown size={20} color="#64748B" />
-                )}
-              </TouchableOpacity>
-              
-              {expandedDays.includes(day.day) && (
-                <View style={styles.mealsContainer}>
-                  <Text style={styles.mealTypeTitle}>Breakfast</Text>
-                  <RecipeCard recipe={day.meals.breakfast} />
-                  
-                  <Text style={styles.mealTypeTitle}>Lunch</Text>
-                  <RecipeCard recipe={day.meals.lunch} />
-                  
-                  <Text style={styles.mealTypeTitle}>Dinner</Text>
-                  <RecipeCard recipe={day.meals.dinner} />
-                  
-                  {day.meals.snacks.length > 0 && (
-                    <>
-                      <Text style={styles.mealTypeTitle}>Snacks</Text>
-                      {day.meals.snacks.map((snack) => (
-                        <RecipeCard key={snack.id} recipe={snack} />
-                      ))}
-                    </>
-                  )}
-                </View>
-              )}
-            </View>
-          ))}
+
+          <View style={styles.mealSection}>
+            <Text style={styles.mealTypeTitle}>Lunch</Text>
+            <RecipeCard 
+              recipe={day.meals.lunch}
+              onPress={() => setSelectedRecipe(day.meals.lunch)}
+            />
+          </View>
+
+          <View style={styles.mealSection}>
+            <Text style={styles.mealTypeTitle}>Dinner</Text>
+            <RecipeCard 
+              recipe={day.meals.dinner}
+              onPress={() => setSelectedRecipe(day.meals.dinner)}
+            />
+          </View>
         </View>
-      </ScrollView>
-      
+      ))}
+
       <View style={styles.footer}>
         <Button 
           title="Add All Ingredients to Shopping List" 
-          onPress={addAllToShoppingList} 
+          onPress={() => router.push('/shopping')}
           style={styles.addButton}
         />
       </View>
 
       {selectedRecipe && <RecipeModal recipe={selectedRecipe} />}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#fff',
   },
   loadingContainer: {
     flex: 1,
@@ -291,153 +247,88 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
+    padding: 20,
+    backgroundColor: '#f8f9fa',
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F0FDF4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    borderBottomColor: '#e9ecef',
   },
   title: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 20,
-    color: '#1E293B',
-  },
-  subtitle: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 14,
-    color: '#64748B',
-  },
-  content: {
-    padding: 16,
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#212529',
   },
   description: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 16,
-    color: '#1E293B',
-    lineHeight: 24,
-    marginBottom: 20,
+    color: '#6c757d',
+    marginTop: 8,
   },
-  nutritionContainer: {
+  nutritionSummary: {
+    padding: 20,
+    backgroundColor: '#fff',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#212529',
+    marginBottom: 12,
+  },
+  nutritionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 8,
+  },
+  modalNutritionGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    flexWrap: 'wrap',
+    backgroundColor: '#f8f9fa',
     padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 8,
   },
   nutritionItem: {
-    alignItems: 'center',
+    width: '48%',
+    marginBottom: 12,
+    alignItems: 'flex-start',
   },
   nutritionLabel: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 14,
-    color: '#64748B',
+    color: '#6c757d',
     marginBottom: 4,
   },
   nutritionValue: {
-    fontFamily: 'Poppins-SemiBold',
     fontSize: 16,
-    color: '#1E293B',
-  },
-  sectionTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 18,
-    color: '#1E293B',
-    marginBottom: 16,
+    fontWeight: '600',
+    color: '#212529',
   },
   dayContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  dayHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e9ecef',
   },
   dayTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 16,
-    color: '#1E293B',
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#212529',
+    marginBottom: 16,
   },
-  mealsContainer: {
-    padding: 16,
+  mealSection: {
+    marginBottom: 20,
   },
   mealTypeTitle: {
-    fontFamily: 'Poppins-Medium',
     fontSize: 16,
-    color: '#64748B',
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  recipeCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  recipeImage: {
-    width: '100%',
-    height: 160,
-    resizeMode: 'cover',
-  },
-  recipeContent: {
-    padding: 12,
-  },
-  recipeTitle: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 16,
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  recipeInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoText: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 14,
-    color: '#64748B',
-    marginLeft: 4,
+    fontWeight: '500',
+    color: '#495057',
+    marginBottom: 12,
   },
   footer: {
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: '#e9ecef',
   },
   addButton: {
     width: '100%',
@@ -449,11 +340,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   errorText: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 18,
-    color: '#1E293B',
-    marginBottom: 16,
+    fontSize: 16,
+    color: '#dc3545',
     textAlign: 'center',
+    marginTop: 20,
   },
   errorButton: {
     width: 200,
@@ -464,7 +354,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
     zIndex: 1000,
   },
   modalContent: {
@@ -483,7 +373,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   closeButtonText: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: 24,
     fontWeight: 'bold',
   },
@@ -496,22 +386,21 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalTitle: {
-    fontFamily: 'Poppins-Bold',
     fontSize: 24,
-    color: '#1E293B',
+    fontWeight: 'bold',
+    color: '#212529',
     marginBottom: 8,
   },
   modalDescription: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 16,
-    color: '#64748B',
+    color: '#6c757d',
     marginBottom: 16,
     lineHeight: 24,
   },
   modalInfoContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#f8f9fa',
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
@@ -521,15 +410,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalInfoText: {
-    fontFamily: 'Poppins-Medium',
     fontSize: 14,
-    color: '#64748B',
+    color: '#6c757d',
     marginLeft: 8,
   },
-  nutritionGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+  modalNutritionContainer: {
+    marginBottom: 24,
   },
   ingredientsSection: {
     marginTop: 24,
@@ -547,9 +433,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   ingredientText: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 16,
-    color: '#1E293B',
+    color: '#212529',
     flex: 1,
   },
   instructionsSection: {
@@ -563,20 +448,19 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#f0fdf4',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   instructionNumberText: {
-    fontFamily: 'Poppins-SemiBold',
     fontSize: 14,
+    fontWeight: '600',
     color: '#22C55E',
   },
   instructionText: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 16,
-    color: '#1E293B',
+    color: '#212529',
     flex: 1,
     lineHeight: 24,
   },
@@ -587,7 +471,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   tag: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#f1f5f9',
     borderRadius: 16,
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -595,8 +479,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   tagText: {
-    fontFamily: 'Poppins-Medium',
     fontSize: 14,
-    color: '#64748B',
+    color: '#6c757d',
   },
 });

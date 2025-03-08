@@ -6,6 +6,7 @@ import MealCard from '../../components/MealCard';
 import Button from '../../components/Button';
 import { mockRecipes, mockMealPlans, mockUserProfile } from '../../data/mockData';
 
+
 export default function HomeScreen() {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
