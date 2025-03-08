@@ -6,9 +6,10 @@ import { Recipe } from '../types';
 interface RecipeCardProps {
   recipe: Recipe;
   onPress?: () => void;
+  mealType?: string;
 }
 
-export function RecipeCard({ recipe, onPress }: RecipeCardProps) {
+export function RecipeCard({ recipe, onPress, mealType }: RecipeCardProps) {
   // Clean the ingredients array - remove quotes and brackets
   const cleanIngredients = (ingredients: string[]) => {
     return ingredients.map(ingredient => {
@@ -24,6 +25,9 @@ export function RecipeCard({ recipe, onPress }: RecipeCardProps) {
       ]}
       onPress={onPress}
     >
+      {mealType && (
+        <Text style={styles.mealType}>{mealType}</Text>
+      )}
       <Image 
         source={{ uri: recipe.image }} 
         style={styles.image}
@@ -166,5 +170,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6c757d',
     marginTop: 4,
+  },
+  mealType: {
+    fontSize: 14,
+    color: '#22C55E',
+    fontWeight: '600',
+    padding: 8,
+    paddingBottom: 0,
+    fontFamily: 'Poppins-SemiBold',
   },
 }); 

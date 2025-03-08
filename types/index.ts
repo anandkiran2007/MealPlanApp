@@ -39,6 +39,12 @@ export interface MealPlan {
     carbs: string;
     fat: string;
   };
+  totalNutrition?: {
+    calories: string;
+    protein: string;
+    carbs: string;
+    fat: string;
+  };
 }
 
 export interface MealPlanDay {

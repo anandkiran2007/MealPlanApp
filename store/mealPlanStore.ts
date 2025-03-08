@@ -5,12 +5,15 @@ import { Recipe, MealPlan } from '../types';
 import { supabase, getTypedRecipes, getTypedMealPlans } from '../lib/supabase';
 import { mockMealPlans } from '../data/mockData';
 
+export const MAX_MEAL_PLANS = 3;
+
 interface MealPlanState {
   currentPlan: MealPlan | null;
   isGenerating: boolean;
   error: string | null;
   generateMealPlan: (params: GenerateMealPlanParams) => Promise<void>;
   saveMealPlan: (plan: MealPlan) => Promise<void>;
+  deleteMealPlan: (id: string) => void;
   fetchUserMealPlans: () => Promise<MealPlan[]>;
   clearError: () => void;
   mealPlans: MealPlan[];
@@ -77,32 +80,26 @@ export const useMealPlanStore = create<MealPlanState>()(
 
       generateMealPlan: async (params) => {
         try {
+          // Check if we've reached the meal plan limit
+          if (get().mealPlans.length >= MAX_MEAL_PLANS) {
+            throw new Error(`You can only have ${MAX_MEAL_PLANS} meal plans at a time. Please delete an existing plan to create a new one.`);
+          }
+
           set({ isGenerating: true, error: null });
 
           // Calculate how many recipes we need based on days
           const recipesNeeded = params.days * 3; // 3 meals per day
-          const fetchLimit = Math.min(recipesNeeded * 2, 18); // Fetch 2x needed recipes, max 18
+          const fetchLimit = Math.min(recipesNeeded * 2, 21); // Reduced to 21 to prevent timeout
 
-          // Optimized query with fewer fields and better indexing
+          // Optimized query with minimal fields and better filtering
           const { data: recipes, error: recipesError } = await supabase
             .from('recipes')
-            .select(`
-              id,
-              title,
-              description,
-              image_url,
-              total_time,
-              prep_time,
-              calories,
-              servings,
-              ingredients,
-              instructions,
-              nutrition
-            `)
-            .not('title', 'is', null)  // Only get recipes with titles
-            .not('ingredients', 'is', null)  // Only get recipes with ingredients
+            .select('id, title, description, image_url, total_time, calories, servings, ingredients, instructions, nutrition')
+            .not('title', 'is', null)
+            .not('ingredients', 'is', null)
+            .gt('calories', 0) // Only get recipes with calories
             .limit(fetchLimit)
-            .order('id', { ascending: true });
+            .order('id', { ascending: false }); // Simple ordering by id
 
           if (recipesError) {
             console.error('Recipe fetch error:', recipesError);
@@ -132,11 +129,11 @@ export const useMealPlanStore = create<MealPlanState>()(
                 description: recipe.description || '',
                 image: recipe.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
                 time: '0 min',
-                calories: '0 kcal',
-                servings: 4,
-                ingredients: [],
-                instructions: [],
-                nutrition: { protein: '0g', carbs: '0g', fat: '0g', fiber: '0g' },
+                calories: recipe.calories?.toString() || '0',
+                servings: recipe.servings || 4,
+                ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
+                instructions: Array.isArray(recipe.instructions) ? recipe.instructions : [],
+                nutrition: recipe.nutrition || { protein: '0g', carbs: '0g', fat: '0g', fiber: '0g' },
                 tags: [],
                 rating: 0,
                 dietType: [],
@@ -145,12 +142,15 @@ export const useMealPlanStore = create<MealPlanState>()(
             }
           });
 
-          // Shuffle transformed recipes
-          const shuffledRecipes = [...transformedRecipes].sort(() => Math.random() - 0.5);
+          // Shuffle transformed recipes more efficiently
+          for (let i = transformedRecipes.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [transformedRecipes[i], transformedRecipes[j]] = [transformedRecipes[j], transformedRecipes[i]];
+          }
 
           // Create meal plan days using transformed recipes
           const days = Array.from({ length: params.days }, (_, i) => {
-            const dayRecipes = shuffledRecipes.slice(i * 3, (i * 3) + 3);
+            const dayRecipes = transformedRecipes.slice(i * 3, (i * 3) + 3);
             
             return {
               day: `Day ${i + 1}`,
@@ -167,13 +167,23 @@ export const useMealPlanStore = create<MealPlanState>()(
           const totalNutrition = days.reduce((acc, day) => {
             const dayNutrition = [day.meals.breakfast, day.meals.lunch, day.meals.dinner].reduce((mealAcc, meal) => {
               if (!meal?.nutrition) return mealAcc;
+
+              // Calculate nutrition per serving
+              const servings = meal.servings || 1;
+              const calories = meal.calories ? parseInt(meal.calories) / servings : 0;
+              const protein = meal.nutrition.protein ? parseInt(meal.nutrition.protein) / servings : 0;
+              const carbs = meal.nutrition.carbs ? parseInt(meal.nutrition.carbs) / servings : 0;
+              const fat = meal.nutrition.fat ? parseInt(meal.nutrition.fat) / servings : 0;
+
               return {
-                calories: (parseInt(mealAcc.calories) + (meal.calories ? parseInt(meal.calories) : 0)) + '',
-                protein: (parseInt(mealAcc.protein) + (meal.nutrition.protein ? parseInt(meal.nutrition.protein) : 0)) + 'g',
-                carbs: (parseInt(mealAcc.carbs) + (meal.nutrition.carbs ? parseInt(meal.nutrition.carbs) : 0)) + 'g',
-                fat: (parseInt(mealAcc.fat) + (meal.nutrition.fat ? parseInt(meal.nutrition.fat) : 0)) + 'g'
+                calories: (parseInt(mealAcc.calories) + calories) + '',
+                protein: (parseInt(mealAcc.protein) + protein) + 'g',
+                carbs: (parseInt(mealAcc.carbs) + carbs) + 'g',
+                fat: (parseInt(mealAcc.fat) + fat) + 'g'
               };
             }, { calories: '0', protein: '0g', carbs: '0g', fat: '0g' });
+
+            // Calculate daily averages
             return {
               calories: (parseInt(acc.calories) + parseInt(dayNutrition.calories)) + '',
               protein: (parseInt(acc.protein) + parseInt(dayNutrition.protein)) + 'g',
@@ -182,12 +192,22 @@ export const useMealPlanStore = create<MealPlanState>()(
             };
           }, { calories: '0', protein: '0g', carbs: '0g', fat: '0g' });
 
+          // Calculate average per day
+          const daysCount = days.length;
+          const averageNutrition = {
+            calories: Math.round(parseInt(totalNutrition.calories) / daysCount) + '',
+            protein: Math.round(parseInt(totalNutrition.protein) / daysCount) + 'g',
+            carbs: Math.round(parseInt(totalNutrition.carbs) / daysCount) + 'g',
+            fat: Math.round(parseInt(totalNutrition.fat) / daysCount) + 'g'
+          };
+
           const newMealPlan: MealPlan = {
             id: crypto.randomUUID(),
             title: `${params.days}-Day Meal Plan`,
             description: `A balanced meal plan for ${params.days} days`,
             days,
-            nutritionGoals: totalNutrition
+            nutritionGoals: averageNutrition, // Using average daily nutrition instead of total
+            totalNutrition: totalNutrition // Adding total nutrition for reference
           };
 
           // Store the meal plan in local state only
@@ -204,6 +224,11 @@ export const useMealPlanStore = create<MealPlanState>()(
             isGenerating: false 
           });
         }
+      },
+
+      deleteMealPlan: (id: string) => {
+        const mealPlans = get().mealPlans.filter(plan => plan.id !== id);
+        set({ mealPlans });
       },
 
       fetchUserMealPlans: async () => {

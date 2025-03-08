@@ -8,13 +8,15 @@ interface HeaderProps {
   showBack?: boolean;
   showNotification?: boolean;
   onNotificationPress?: () => void;
+  rightElement?: React.ReactNode;
 }
 
 export default function Header({ 
   title, 
   showBack = false, 
   showNotification = false,
-  onNotificationPress
+  onNotificationPress,
+  rightElement
 }: HeaderProps) {
   const router = useRouter();
 
@@ -26,9 +28,8 @@ export default function Header({
             <ArrowLeft size={24} color="#1E293B" />
           </TouchableOpacity>
         )}
+        <Text style={styles.title}>{title}</Text>
       </View>
-      
-      <Text style={styles.title}>{title}</Text>
       
       <View style={styles.rightContainer}>
         {showNotification && (
@@ -38,6 +39,7 @@ export default function Header({
           </TouchableOpacity>
         )}
       </View>
+      {rightElement}
     </View>
   );
 }

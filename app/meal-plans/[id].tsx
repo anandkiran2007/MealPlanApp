@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams, useRouter, Link } from 'expo-router';
-import { Clock, Users, ChefHat } from 'lucide-react-native';
+import { Clock, Users, ChefHat, Trash2 } from 'lucide-react-native';
 import Header from '../../components/Header';
 import Button from '../../components/Button';
 import { useMealPlanStore } from '../../store/mealPlanStore';
@@ -15,7 +15,7 @@ export default function MealPlanDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { mealPlans } = useMealPlanStore();
+  const { mealPlans, deleteMealPlan } = useMealPlanStore();
   const mealPlan = mealPlans.find(plan => plan.id === id);
 
   useEffect(() => {
@@ -24,6 +24,11 @@ export default function MealPlanDetailScreen() {
     }
     setLoading(false);
   }, [mealPlan, id]);
+
+  const handleDelete = () => {
+    deleteMealPlan(id);
+    router.replace('/meal-plans');
+  };
 
   if (loading) {
     return (
@@ -120,7 +125,9 @@ export default function MealPlanDetailScreen() {
 
     // Enhanced cleaning function for instructions
     const cleanInstructions = (instructions: string[]) => {
-      return instructions.map(instruction => {
+      const allSteps: string[] = [];
+      
+      instructions.forEach(instruction => {
         // Remove brackets, quotes, and escape characters
         let cleaned = instruction
           .replace(/[\[\]"\\]/g, '')
@@ -133,9 +140,18 @@ export default function MealPlanDetailScreen() {
           .replace(/(\d+)\\u00b0/g, '$1°')  // Replace unicode degree symbol
           .replace(/(\d+)\s*degrees?/gi, '$1°');  // Replace "degrees" with °
         
-        // Capitalize first letter
-        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-      }).filter(instruction => instruction.length > 0);
+        // Split by comma and clean each step
+        const steps = cleaned.split(',').map(step => {
+          step = step.trim();
+          // Capitalize first letter if it's not already capitalized
+          return step.charAt(0).toUpperCase() + step.slice(1);
+        });
+        
+        // Add non-empty steps to allSteps
+        allSteps.push(...steps.filter(step => step.length > 0));
+      });
+
+      return allSteps;
     };
 
     // Format time display
@@ -258,14 +274,18 @@ export default function MealPlanDetailScreen() {
       <Header 
         title={mealPlan.title} 
         showBack={true}
+        rightElement={
+          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+            <Trash2 size={20} color="#DC2626" />
+          </TouchableOpacity>
+        }
       />
-      <ScrollView style={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.description}>{mealPlan.description}</Text>
-        </View>
+      <ScrollView style={styles.content}>
+        <Text style={styles.description}>{mealPlan.description}</Text>
 
-        <View style={styles.nutritionSummary}>
-          <Text style={styles.sectionTitle}>Total Nutrition</Text>
+        {/* Nutrition Summary */}
+        <View style={styles.nutritionContainer}>
+          <Text style={styles.sectionTitle}>Daily Average Nutrition</Text>
           <View style={styles.nutritionGrid}>
             <View style={styles.nutritionItem}>
               <Text style={styles.nutritionLabel}>Calories</Text>
@@ -286,46 +306,54 @@ export default function MealPlanDetailScreen() {
           </View>
         </View>
 
-        {mealPlan.days.map((day, index) => (
-          <View key={index} style={styles.dayContainer}>
-            <Text style={styles.dayTitle}>{day.day}</Text>
-            
-            <View style={styles.mealSection}>
-              <Text style={styles.mealTypeTitle}>Breakfast</Text>
-              <RecipeCard 
-                recipe={day.meals.breakfast} 
-                onPress={() => setSelectedRecipe(day.meals.breakfast)}
-              />
-            </View>
-
-            <View style={styles.mealSection}>
-              <Text style={styles.mealTypeTitle}>Lunch</Text>
-              <RecipeCard 
-                recipe={day.meals.lunch}
-                onPress={() => setSelectedRecipe(day.meals.lunch)}
-              />
-            </View>
-
-            <View style={styles.mealSection}>
-              <Text style={styles.mealTypeTitle}>Dinner</Text>
-              <RecipeCard 
-                recipe={day.meals.dinner}
-                onPress={() => setSelectedRecipe(day.meals.dinner)}
-              />
+        {mealPlan.totalNutrition && (
+          <View style={styles.nutritionContainer}>
+            <Text style={styles.sectionTitle}>Total Plan Nutrition</Text>
+            <View style={styles.nutritionGrid}>
+              <View style={styles.nutritionItem}>
+                <Text style={styles.nutritionLabel}>Calories</Text>
+                <Text style={styles.nutritionValue}>{mealPlan.totalNutrition.calories}</Text>
+              </View>
+              <View style={styles.nutritionItem}>
+                <Text style={styles.nutritionLabel}>Protein</Text>
+                <Text style={styles.nutritionValue}>{mealPlan.totalNutrition.protein}</Text>
+              </View>
+              <View style={styles.nutritionItem}>
+                <Text style={styles.nutritionLabel}>Carbs</Text>
+                <Text style={styles.nutritionValue}>{mealPlan.totalNutrition.carbs}</Text>
+              </View>
+              <View style={styles.nutritionItem}>
+                <Text style={styles.nutritionLabel}>Fat</Text>
+                <Text style={styles.nutritionValue}>{mealPlan.totalNutrition.fat}</Text>
+              </View>
             </View>
           </View>
+        )}
+
+        {/* Daily Meals */}
+        {mealPlan.days.map((day, index) => (
+          <View key={day.day} style={styles.dayContainer}>
+            <Text style={styles.dayTitle}>{day.day}</Text>
+            <RecipeCard
+              recipe={day.meals.breakfast}
+              mealType="Breakfast"
+              onPress={() => setSelectedRecipe(day.meals.breakfast)}
+            />
+            <RecipeCard
+              recipe={day.meals.lunch}
+              mealType="Lunch"
+              onPress={() => setSelectedRecipe(day.meals.lunch)}
+            />
+            <RecipeCard
+              recipe={day.meals.dinner}
+              mealType="Dinner"
+              onPress={() => setSelectedRecipe(day.meals.dinner)}
+            />
+          </View>
         ))}
-
-        <View style={styles.footer}>
-          <Button 
-            title="Add All Ingredients to Shopping List" 
-            onPress={() => router.push('/shopping')}
-            style={styles.addButton}
-          />
-        </View>
-
-        {selectedRecipe && <RecipeModal recipe={selectedRecipe} />}
       </ScrollView>
+
+      {selectedRecipe && <RecipeModal recipe={selectedRecipe} />}
     </View>
   );
 }
@@ -333,102 +361,79 @@ export default function MealPlanDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F9FAFB',
   },
-  scrollContainer: {
+  content: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    padding: 20,
-    backgroundColor: '#f8f9fa',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#212529',
+    padding: 16,
   },
   description: {
     fontSize: 16,
-    color: '#6c757d',
-    marginTop: 8,
-  },
-  nutritionSummary: {
-    padding: 20,
-    backgroundColor: '#fff',
+    color: '#4B5563',
     marginBottom: 16,
+    fontFamily: 'Poppins-Regular',
+  },
+  nutritionContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#212529',
+    color: '#1F2937',
     marginBottom: 12,
+    fontFamily: 'Poppins-SemiBold',
   },
   nutritionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 8,
-  },
-  modalNutritionGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 8,
   },
   nutritionItem: {
     width: '48%',
-    marginBottom: 12,
-    alignItems: 'flex-start',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
   },
   nutritionLabel: {
     fontSize: 14,
-    color: '#6c757d',
+    color: '#6B7280',
     marginBottom: 4,
+    fontFamily: 'Poppins-Regular',
   },
   nutritionValue: {
     fontSize: 16,
+    color: '#1F2937',
     fontWeight: '600',
-    color: '#212529',
+    fontFamily: 'Poppins-SemiBold',
   },
   dayContainer: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
+    marginBottom: 24,
   },
   dayTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#212529',
+    color: '#1F2937',
     marginBottom: 16,
+    fontFamily: 'Poppins-SemiBold',
   },
-  mealSection: {
-    marginBottom: 20,
+  deleteButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#FEE2E2',
   },
-  mealTypeTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#495057',
-    marginBottom: 12,
-  },
-  footer: {
-    padding: 16,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-  },
-  addButton: {
-    width: '100%',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   errorContainer: {
     flex: 1,
@@ -438,12 +443,13 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: '#dc3545',
+    color: '#DC2626',
+    marginBottom: 16,
     textAlign: 'center',
-    marginTop: 20,
+    fontFamily: 'Poppins-Regular',
   },
   errorButton: {
-    width: 200,
+    backgroundColor: '#22C55E',
   },
   modalContainer: {
     position: 'absolute',
