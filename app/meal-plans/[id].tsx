@@ -254,74 +254,79 @@ export default function MealPlanDetailScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{mealPlan.title}</Text>
-        <Text style={styles.description}>{mealPlan.description}</Text>
-      </View>
+    <View style={styles.container}>
+      <Header 
+        title={mealPlan.title} 
+        showBack={true}
+      />
+      <ScrollView style={styles.scrollContainer}>
+        <View style={styles.header}>
+          <Text style={styles.description}>{mealPlan.description}</Text>
+        </View>
 
-      <View style={styles.nutritionSummary}>
-        <Text style={styles.sectionTitle}>Total Nutrition</Text>
-        <View style={styles.nutritionGrid}>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Calories</Text>
-            <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.calories}</Text>
-          </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Protein</Text>
-            <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.protein}</Text>
-          </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Carbs</Text>
-            <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.carbs}</Text>
-          </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Fat</Text>
-            <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.fat}</Text>
+        <View style={styles.nutritionSummary}>
+          <Text style={styles.sectionTitle}>Total Nutrition</Text>
+          <View style={styles.nutritionGrid}>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionLabel}>Calories</Text>
+              <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.calories}</Text>
+            </View>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionLabel}>Protein</Text>
+              <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.protein}</Text>
+            </View>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionLabel}>Carbs</Text>
+              <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.carbs}</Text>
+            </View>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionLabel}>Fat</Text>
+              <Text style={styles.nutritionValue}>{mealPlan.nutritionGoals.fat}</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {mealPlan.days.map((day, index) => (
-        <View key={index} style={styles.dayContainer}>
-          <Text style={styles.dayTitle}>{day.day}</Text>
-          
-          <View style={styles.mealSection}>
-            <Text style={styles.mealTypeTitle}>Breakfast</Text>
-            <RecipeCard 
-              recipe={day.meals.breakfast} 
-              onPress={() => setSelectedRecipe(day.meals.breakfast)}
-            />
-          </View>
+        {mealPlan.days.map((day, index) => (
+          <View key={index} style={styles.dayContainer}>
+            <Text style={styles.dayTitle}>{day.day}</Text>
+            
+            <View style={styles.mealSection}>
+              <Text style={styles.mealTypeTitle}>Breakfast</Text>
+              <RecipeCard 
+                recipe={day.meals.breakfast} 
+                onPress={() => setSelectedRecipe(day.meals.breakfast)}
+              />
+            </View>
 
-          <View style={styles.mealSection}>
-            <Text style={styles.mealTypeTitle}>Lunch</Text>
-            <RecipeCard 
-              recipe={day.meals.lunch}
-              onPress={() => setSelectedRecipe(day.meals.lunch)}
-            />
-          </View>
+            <View style={styles.mealSection}>
+              <Text style={styles.mealTypeTitle}>Lunch</Text>
+              <RecipeCard 
+                recipe={day.meals.lunch}
+                onPress={() => setSelectedRecipe(day.meals.lunch)}
+              />
+            </View>
 
-          <View style={styles.mealSection}>
-            <Text style={styles.mealTypeTitle}>Dinner</Text>
-            <RecipeCard 
-              recipe={day.meals.dinner}
-              onPress={() => setSelectedRecipe(day.meals.dinner)}
-            />
+            <View style={styles.mealSection}>
+              <Text style={styles.mealTypeTitle}>Dinner</Text>
+              <RecipeCard 
+                recipe={day.meals.dinner}
+                onPress={() => setSelectedRecipe(day.meals.dinner)}
+              />
+            </View>
           </View>
+        ))}
+
+        <View style={styles.footer}>
+          <Button 
+            title="Add All Ingredients to Shopping List" 
+            onPress={() => router.push('/shopping')}
+            style={styles.addButton}
+          />
         </View>
-      ))}
 
-      <View style={styles.footer}>
-        <Button 
-          title="Add All Ingredients to Shopping List" 
-          onPress={() => router.push('/shopping')}
-          style={styles.addButton}
-        />
-      </View>
-
-      {selectedRecipe && <RecipeModal recipe={selectedRecipe} />}
-    </ScrollView>
+        {selectedRecipe && <RecipeModal recipe={selectedRecipe} />}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -329,6 +334,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  scrollContainer: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -342,7 +350,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e9ecef',
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#212529',
   },
