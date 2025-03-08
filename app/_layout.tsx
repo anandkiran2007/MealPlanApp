@@ -11,6 +11,8 @@ import {
 import { SplashScreen } from 'expo-router';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useAuthStore } from '../store/authStore';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -18,6 +20,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 });
 
 export default function RootLayout() {
+  useFrameworkReady();
   const initialize = useAuthStore(state => state.initialize);
 
   const [fontsLoaded, fontError] = useFonts({
@@ -28,7 +31,24 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase is not configured. Some features may not work.');
+    }
+
+    // Initialize auth state
     initialize();
+
+    // Set up Supabase auth listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        initialize();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [initialize]);
 
   const onLayoutRootView = useCallback(async () => {
@@ -55,14 +75,22 @@ export default function RootLayout() {
     <>
       <Stack screenOptions={{ 
         headerShown: false,
-        animation: Platform.OS === 'ios' ? 'default' : 'fade',
+        animation: Platform.select({
+          ios: 'default',
+          android: 'fade',
+          default: 'fade'
+        }),
       }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen 
           name="(tabs)" 
           options={{ 
             headerShown: false,
-            animation: 'fade',
+            animation: Platform.select({
+              ios: 'default',
+              android: 'fade',
+              default: 'fade'
+            }),
           }} 
         />
         <Stack.Screen 
@@ -86,7 +114,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   loadingText: {
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: Platform.select({
+      web: 'System',
+      default: 'Poppins-SemiBold'
+    }),
     fontSize: 18,
     color: '#22C55E',
   }

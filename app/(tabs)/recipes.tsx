@@ -1,33 +1,59 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Search, Filter, Bookmark } from 'lucide-react-native';
 import Header from '../../components/Header';
 import MealCard from '../../components/MealCard';
-import { mockRecipes } from '../../data/mockData';
+import { useRecipeStore } from '../../store/recipeStore';
 
 export default function RecipesScreen() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const { 
+    recipes,
+    loading,
+    error,
+    searchQuery,
+    selectedTags,
+    loadRecipes,
+    setSearchQuery,
+    toggleTag,
+    getFilteredRecipes
+  } = useRecipeStore();
 
-  const toggleTag = (tag: string) => {
-    if (selectedTags.includes(tag)) {
-      setSelectedTags(selectedTags.filter(t => t !== tag));
-    } else {
-      setSelectedTags([...selectedTags, tag]);
-    }
-  };
+  useEffect(() => {
+    loadRecipes();
+  }, []);
 
-  const filteredRecipes = mockRecipes.filter(recipe => {
-    const matchesSearch = searchQuery === '' || 
-      recipe.title.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesTags = selectedTags.length === 0 || 
-      recipe.tags.some(tag => selectedTags.includes(tag));
-    
-    return matchesSearch && matchesTags;
-  });
+  const filteredRecipes = getFilteredRecipes();
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Header title="Recipes" showNotification onNotificationPress={() => {}} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#22C55E" />
+          <Text style={styles.loadingText}>Loading recipes...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Header title="Recipes" showNotification onNotificationPress={() => {}} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={loadRecipes}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -64,7 +90,7 @@ export default function RecipesScreen() {
               styles.tagButton,
               selectedTags.length === 0 && styles.selectedTagButton
             ]}
-            onPress={() => setSelectedTags([])}
+            onPress={() => useRecipeStore.setState({ selectedTags: [] })}
           >
             <Text style={[
               styles.tagText,
@@ -126,6 +152,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 16,
+    color: '#64748B',
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  errorText: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 16,
+    color: '#EF4444',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#22C55E',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: '#FFFFFF',
   },
   searchContainer: {
     flexDirection: 'row',

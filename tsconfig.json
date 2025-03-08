@@ -4,7 +4,16 @@
     "strict": true,
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2020",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "skipLibCheck": true
   },
   "include": [
     "**/*.ts",
@@ -12,5 +21,8 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }
