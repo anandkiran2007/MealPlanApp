@@ -1,10 +1,12 @@
+export type MealStatus = 'pending' | 'completed';
+
 export interface Recipe {
   id: string;
   title: string;
   description: string;
   image: string;
   time: string;
-  calories: string;
+  calories: number | string;
   servings: number;
   ingredients: string[];
   instructions: string[];
@@ -18,21 +20,14 @@ export interface Recipe {
   rating: number;
   dietType: string[];
   prepTime: number;
+  status?: MealStatus;
 }
 
 export interface MealPlan {
   id: string;
   title: string;
   description: string;
-  days: {
-    day: string;
-    meals: {
-      breakfast: Recipe;
-      lunch: Recipe;
-      dinner: Recipe;
-      snacks: Recipe[];
-    };
-  }[];
+  days: DayMeals[];
   nutritionGoals: {
     calories: string;
     protein: string;
@@ -44,6 +39,13 @@ export interface MealPlan {
     protein: string;
     carbs: string;
     fat: string;
+  };
+  startDate?: Date;
+  feedback?: {
+    rating: number;
+    comments: string;
+    completedMeals: number;
+    totalMeals: number;
   };
 }
 
@@ -73,5 +75,15 @@ export interface UserProfile {
     protein: string;
     carbs: string;
     fat: string;
+  };
+}
+
+export interface DayMeals {
+  day: string;
+  meals: {
+    breakfast: Recipe;
+    lunch: Recipe;
+    dinner: Recipe;
+    snacks?: Recipe[];
   };
 }

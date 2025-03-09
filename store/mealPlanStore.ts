@@ -19,6 +19,15 @@ interface MealPlanState {
   mealPlans: MealPlan[];
   loading: boolean;
   fetchMealPlans: () => Promise<void>;
+  addMealPlan: (mealPlan: MealPlan) => void;
+  updateMealPlan: (mealPlan: MealPlan) => void;
+  mealHistory: {
+    date: Date;
+    recipe: Recipe;
+    mealType: string;
+  }[];
+  addToHistory: (meal: { date: Date; recipe: Recipe; mealType: string }) => void;
+  checkAndContinuePlan: () => void;
 }
 
 interface GenerateMealPlanParams {
@@ -76,6 +85,7 @@ export const useMealPlanStore = create<MealPlanState>()(
       isGenerating: false,
       error: null,
       mealPlans: [],
+      mealHistory: [],
       loading: false,
 
       generateMealPlan: async (params) => {
@@ -267,7 +277,68 @@ export const useMealPlanStore = create<MealPlanState>()(
           set({ error: errorMessage });
           throw new Error(errorMessage);
         }
-      }
+      },
+
+      addMealPlan: (mealPlan) => set((state) => ({ 
+        mealPlans: [...state.mealPlans, mealPlan] 
+      })),
+
+      updateMealPlan: (mealPlan) => {
+        const { mealPlans } = get();
+        const updatedPlans = mealPlans.map((plan) => 
+          plan.id === mealPlan.id ? mealPlan : plan
+        );
+        set({ mealPlans: updatedPlans });
+
+        // Check if all meals in the plan are completed
+        const allMealsCompleted = mealPlan.days.every(day =>
+          Object.values(day.meals)
+            .filter((meal): meal is Recipe => !Array.isArray(meal))
+            .every(meal => meal.status === 'completed')
+        );
+
+        if (allMealsCompleted) {
+          get().checkAndContinuePlan();
+        }
+      },
+
+      addToHistory: (meal) => {
+        const { mealHistory } = get();
+        set({ mealHistory: [...mealHistory, meal] });
+      },
+
+      checkAndContinuePlan: () => {
+        const { mealPlans } = get();
+        const currentPlan = mealPlans[0]; // Assume the first plan is the current one
+
+        if (currentPlan) {
+          // Create a new plan starting from the next day
+          const newPlan: MealPlan = {
+            ...currentPlan,
+            id: Date.now().toString(),
+            startDate: new Date(),
+            days: currentPlan.days.map(day => ({
+              ...day,
+              meals: {
+                breakfast: { ...day.meals.breakfast, status: 'pending' },
+                lunch: { ...day.meals.lunch, status: 'pending' },
+                dinner: { ...day.meals.dinner, status: 'pending' },
+                ...(day.meals.snacks && {
+                  snacks: day.meals.snacks.map(snack => ({ ...snack, status: 'pending' }))
+                })
+              }
+            })),
+            feedback: {
+              rating: 0,
+              comments: '',
+              completedMeals: 0,
+              totalMeals: currentPlan.days.length * 3
+            }
+          };
+
+          set({ mealPlans: [newPlan, ...mealPlans] });
+        }
+      },
     }),
     {
       name: 'meal-plan-storage',

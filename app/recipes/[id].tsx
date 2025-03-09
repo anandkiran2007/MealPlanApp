@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Clock, Flame, Users, Heart, Bookmark, Share2 } from 'lucide-react-native';
+import { ArrowLeft, Clock, Flame, Users, Heart, Bookmark, Share2, ChefHat, ShoppingBag } from 'lucide-react-native';
 import Header from '../../components/Header';
 import Button from '../../components/Button';
 import NutritionBadge from '../../components/NutritionBadge';
+import MealTracker from '../../components/MealTracker';
+import { useShoppingListStore } from '../../store/shoppingListStore';
 import { mockRecipes } from '../../data/mockData';
 
 export default function RecipeDetailScreen() {
@@ -12,8 +14,10 @@ export default function RecipeDetailScreen() {
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [showMealTracker, setShowMealTracker] = useState(false);
   
   const recipe = mockRecipes.find(r => r.id === id);
+  const { addRecipeIngredients, generateSmartList } = useShoppingListStore();
   
   if (!recipe) {
     return (
@@ -45,95 +49,108 @@ export default function RecipeDetailScreen() {
   };
 
   const addToShoppingList = () => {
+    addRecipeIngredients(recipe);
     router.push('/shopping');
+  };
+
+  const startCooking = () => {
+    setShowMealTracker(true);
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: recipe.image }} style={styles.image} />
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <ArrowLeft size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <View style={styles.actionButtons}>
+      <ScrollView>
+        <Image 
+          source={{ uri: recipe.image }}
+          style={styles.image}
+          defaultSource={{ uri: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c' }}
+        />
+        
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <ArrowLeft size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        <View style={styles.content}>
+          <Text style={styles.title}>{recipe.title}</Text>
+          <Text style={styles.description}>{recipe.description}</Text>
+
+          <View style={styles.statsContainer}>
+            <View style={styles.stat}>
+              <Clock size={20} color="#64748B" />
+              <Text style={styles.statText}>{recipe.time}</Text>
+            </View>
+            <View style={styles.stat}>
+              <Flame size={20} color="#64748B" />
+              <Text style={styles.statText}>{recipe.calories}</Text>
+            </View>
+            <View style={styles.stat}>
+              <Users size={20} color="#64748B" />
+              <Text style={styles.statText}>{recipe.servings} servings</Text>
+            </View>
+          </View>
+
+          <View style={styles.actionsContainer}>
             <TouchableOpacity 
-              style={styles.actionButton}
+              style={[styles.actionButton, isFavorite && styles.actionButtonActive]}
               onPress={toggleFavorite}
             >
               <Heart 
-                size={24} 
-                color={isFavorite ? "#EF4444" : "#FFFFFF"} 
-                fill={isFavorite ? "#EF4444" : "none"} 
+                size={20} 
+                color={isFavorite ? '#DC2626' : '#64748B'} 
+                fill={isFavorite ? '#DC2626' : 'none'}
               />
             </TouchableOpacity>
+            
             <TouchableOpacity 
-              style={styles.actionButton}
+              style={[styles.actionButton, isBookmarked && styles.actionButtonActive]}
               onPress={toggleBookmark}
             >
               <Bookmark 
-                size={24} 
-                color="#FFFFFF" 
-                fill={isBookmarked ? "#FFFFFF" : "none"} 
+                size={20} 
+                color={isBookmarked ? '#22C55E' : '#64748B'} 
+                fill={isBookmarked ? '#22C55E' : 'none'}
               />
             </TouchableOpacity>
+            
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={shareRecipe}
             >
-              <Share2 size={24} color="#FFFFFF" />
+              <Share2 size={20} color="#64748B" />
             </TouchableOpacity>
           </View>
-        </View>
-        
-        <View style={styles.content}>
-          <Text style={styles.title}>{recipe.title}</Text>
-          
-          <View style={styles.infoContainer}>
-            <View style={styles.infoItem}>
-              <Clock size={20} color="#64748B" />
-              <Text style={styles.infoText}>{recipe.time}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Flame size={20} color="#64748B" />
-              <Text style={styles.infoText}>{recipe.calories}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Users size={20} color="#64748B" />
-              <Text style={styles.infoText}>{recipe.servings} servings</Text>
-            </View>
-          </View>
-          
-          <Text style={styles.description}>{recipe.description}</Text>
-          
+
           <View style={styles.nutritionContainer}>
-            <NutritionBadge 
-              label="Protein" 
-              value={recipe.nutrition.protein} 
-              color="#22C55E" 
-            />
-            <NutritionBadge 
-              label="Carbs" 
-              value={recipe.nutrition.carbs} 
-              color="#3B82F6" 
-            />
-            <NutritionBadge 
-              label="Fat" 
-              value={recipe.nutrition.fat} 
-              color="#F59E0B" 
-            />
-            <NutritionBadge 
-              label="Fiber" 
-              value={recipe.nutrition.fiber} 
-              color="#8B5CF6" 
-            />
+            <Text style={styles.sectionTitle}>Nutrition per serving</Text>
+            <View style={styles.nutritionGrid}>
+              <NutritionBadge
+                label="Protein"
+                value={recipe.nutrition.protein}
+                color="#22C55E"
+              />
+              <NutritionBadge
+                label="Carbs"
+                value={recipe.nutrition.carbs}
+                color="#3B82F6"
+              />
+              <NutritionBadge
+                label="Fat"
+                value={recipe.nutrition.fat}
+                color="#F59E0B"
+              />
+              <NutritionBadge
+                label="Fiber"
+                value={recipe.nutrition.fiber}
+                color="#8B5CF6"
+              />
+            </View>
           </View>
-          
-          <Text style={styles.sectionTitle}>Ingredients</Text>
+
           <View style={styles.ingredientsContainer}>
+            <Text style={styles.sectionTitle}>Ingredients</Text>
             {recipe.ingredients.map((ingredient, index) => (
               <View key={index} style={styles.ingredientItem}>
                 <View style={styles.bulletPoint} />
@@ -141,9 +158,9 @@ export default function RecipeDetailScreen() {
               </View>
             ))}
           </View>
-          
-          <Text style={styles.sectionTitle}>Instructions</Text>
+
           <View style={styles.instructionsContainer}>
+            <Text style={styles.sectionTitle}>Instructions</Text>
             {recipe.instructions.map((instruction, index) => (
               <View key={index} style={styles.instructionItem}>
                 <View style={styles.instructionNumber}>
@@ -153,7 +170,7 @@ export default function RecipeDetailScreen() {
               </View>
             ))}
           </View>
-          
+
           <View style={styles.tagsContainer}>
             {recipe.tags.map((tag, index) => (
               <View key={index} style={styles.tag}>
@@ -163,14 +180,33 @@ export default function RecipeDetailScreen() {
           </View>
         </View>
       </ScrollView>
-      
+
       <View style={styles.footer}>
         <Button 
-          title="Add Ingredients to Shopping List" 
-          onPress={addToShoppingList} 
-          style={styles.addButton}
+          title="Start Cooking"
+          onPress={startCooking}
+          style={styles.cookButton}
+          icon={<ChefHat size={20} color="#FFFFFF" />}
+        />
+        <Button 
+          title="Add to Shopping List"
+          onPress={addToShoppingList}
+          variant="outline"
+          style={styles.shoppingButton}
+          icon={<ShoppingBag size={20} color="#22C55E" />}
         />
       </View>
+
+      <Modal
+        visible={showMealTracker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <MealTracker 
+          recipe={recipe}
+          onClose={() => setShowMealTracker(false)}
+        />
+      </Modal>
     </View>
   );
 }
@@ -178,20 +214,16 @@ export default function RecipeDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  imageContainer: {
-    position: 'relative',
-    height: 300,
+    backgroundColor: '#FFFFFF',
   },
   image: {
     width: '100%',
-    height: '100%',
+    height: 300,
     resizeMode: 'cover',
   },
   backButton: {
     position: 'absolute',
-    top: 50,
+    top: 48,
     left: 16,
     width: 40,
     height: 40,
@@ -200,81 +232,76 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  actionButtons: {
-    position: 'absolute',
-    top: 50,
-    right: 16,
-    flexDirection: 'row',
-  },
-  actionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
   content: {
+    flex: 1,
     padding: 16,
   },
   title: {
-    fontFamily: 'Poppins-Bold',
     fontSize: 24,
-    color: '#1E293B',
-    marginBottom: 12,
-  },
-  infoContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  infoText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 14,
-    color: '#64748B',
-    marginLeft: 4,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+    fontFamily: 'Poppins-Bold',
   },
   description: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 16,
-    color: '#1E293B',
+    color: '#6B7280',
+    marginBottom: 16,
     lineHeight: 24,
-    marginBottom: 20,
+    fontFamily: 'Poppins-Regular',
   },
-  nutritionContainer: {
+  statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F4F6',
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#4B5563',
+    fontFamily: 'Poppins-Regular',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 24,
+  },
+  actionButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionButtonActive: {
+    backgroundColor: '#FEE2E2',
+  },
+  nutritionContainer: {
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontFamily: 'Poppins-SemiBold',
     fontSize: 18,
-    color: '#1E293B',
+    fontWeight: '600',
+    color: '#1F2937',
     marginBottom: 16,
+    fontFamily: 'Poppins-SemiBold',
+  },
+  nutritionGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
   ingredientsContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   ingredientItem: {
     flexDirection: 'row',
@@ -289,21 +316,13 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   ingredientText: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 16,
-    color: '#1E293B',
+    color: '#4B5563',
     flex: 1,
+    fontFamily: 'Poppins-Regular',
   },
   instructionsContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   instructionItem: {
     flexDirection: 'row',
@@ -319,43 +338,50 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   instructionNumberText: {
-    fontFamily: 'Poppins-SemiBold',
     fontSize: 14,
+    fontWeight: '600',
     color: '#22C55E',
+    fontFamily: 'Poppins-SemiBold',
   },
   instructionText: {
-    fontFamily: 'Poppins-Regular',
     fontSize: 16,
-    color: '#1E293B',
+    color: '#4B5563',
     flex: 1,
     lineHeight: 24,
+    fontFamily: 'Poppins-Regular',
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 24,
+    gap: 8,
+    marginBottom: 32,
   },
   tag: {
-    backgroundColor: '#F1F5F9',
-    borderRadius: 16,
-    paddingVertical: 6,
+    backgroundColor: '#F3F4F6',
     paddingHorizontal: 12,
-    marginRight: 8,
-    marginBottom: 8,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   tagText: {
-    fontFamily: 'Poppins-Medium',
     fontSize: 14,
-    color: '#64748B',
+    color: '#4B5563',
+    fontFamily: 'Poppins-Regular',
   },
   footer: {
+    flexDirection: 'row',
     padding: 16,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
+    gap: 12,
   },
-  addButton: {
-    width: '100%',
+  cookButton: {
+    flex: 1,
+    backgroundColor: '#22C55E',
+  },
+  shoppingButton: {
+    flex: 1,
+    borderColor: '#22C55E',
   },
   errorContainer: {
     flex: 1,
@@ -364,12 +390,13 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   errorText: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 18,
-    color: '#1E293B',
+    fontSize: 16,
+    color: '#DC2626',
     marginBottom: 16,
+    textAlign: 'center',
+    fontFamily: 'Poppins-Regular',
   },
   errorButton: {
-    width: 200,
+    backgroundColor: '#22C55E',
   },
 });

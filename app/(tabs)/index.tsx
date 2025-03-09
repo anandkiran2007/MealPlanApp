@@ -89,31 +89,6 @@ export default function HomeScreen() {
             ))}
           </ScrollView>
         </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recommended Recipes</Text>
-            <TouchableOpacity 
-              style={styles.viewAllButton}
-              onPress={() => router.push('/recipes')}
-            >
-              <Text style={styles.viewAllText}>View All</Text>
-              <ChevronRight size={16} color="#22C55E" />
-            </TouchableOpacity>
-          </View>
-          
-          {mockRecipes.slice(0, 3).map((recipe) => (
-            <MealCard
-              key={recipe.id}
-              title={recipe.title}
-              image={recipe.image}
-              time={recipe.time}
-              calories={recipe.calories}
-              servings={recipe.servings}
-              onPress={() => router.push(`/recipes/${recipe.id}`)}
-            />
-          ))}
-        </View>
       </ScrollView>
     </View>
   );

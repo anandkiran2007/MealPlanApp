@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, View } from 'react-native';
 
 interface ButtonProps {
   title: string;
@@ -10,6 +10,8 @@ interface ButtonProps {
   loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
 }
 
 export default function Button({
@@ -21,49 +23,74 @@ export default function Button({
   loading = false,
   style,
   textStyle,
+  icon,
+  iconPosition = 'left',
 }: ButtonProps) {
   const getButtonStyle = () => {
-    let buttonStyle = [styles.button];
+    const buttonStyles: ViewStyle[] = [styles.button];
     
     // Add variant style
-    if (variant === 'primary') buttonStyle.push(styles.primaryButton);
-    if (variant === 'secondary') buttonStyle.push(styles.secondaryButton);
-    if (variant === 'outline') buttonStyle.push(styles.outlineButton);
+    if (variant === 'primary') buttonStyles.push(styles.primaryButton);
+    if (variant === 'secondary') buttonStyles.push(styles.secondaryButton);
+    if (variant === 'outline') buttonStyles.push(styles.outlineButton);
     
     // Add size style
-    if (size === 'small') buttonStyle.push(styles.smallButton);
-    if (size === 'medium') buttonStyle.push(styles.mediumButton);
-    if (size === 'large') buttonStyle.push(styles.largeButton);
+    if (size === 'small') buttonStyles.push(styles.smallButton);
+    if (size === 'medium') buttonStyles.push(styles.mediumButton);
+    if (size === 'large') buttonStyles.push(styles.largeButton);
     
     // Add disabled style
-    if (disabled) buttonStyle.push(styles.disabledButton);
+    if (disabled) buttonStyles.push(styles.disabledButton);
     
     // Add custom style
-    if (style) buttonStyle.push(style);
+    if (style) buttonStyles.push(style);
     
-    return buttonStyle;
+    return buttonStyles;
   };
   
   const getTextStyle = () => {
-    let textStyleArray = [styles.buttonText];
+    const textStyles: TextStyle[] = [styles.buttonText];
     
     // Add variant text style
-    if (variant === 'primary') textStyleArray.push(styles.primaryText);
-    if (variant === 'secondary') textStyleArray.push(styles.secondaryText);
-    if (variant === 'outline') textStyleArray.push(styles.outlineText);
+    if (variant === 'primary') textStyles.push(styles.primaryText);
+    if (variant === 'secondary') textStyles.push(styles.secondaryText);
+    if (variant === 'outline') textStyles.push(styles.outlineText);
     
     // Add size text style
-    if (size === 'small') textStyleArray.push(styles.smallText);
-    if (size === 'medium') textStyleArray.push(styles.mediumText);
-    if (size === 'large') textStyleArray.push(styles.largeText);
+    if (size === 'small') textStyles.push(styles.smallText);
+    if (size === 'medium') textStyles.push(styles.mediumText);
+    if (size === 'large') textStyles.push(styles.largeText);
     
     // Add disabled text style
-    if (disabled) textStyleArray.push(styles.disabledText);
+    if (disabled) textStyles.push(styles.disabledText);
     
     // Add custom text style
-    if (textStyle) textStyleArray.push(textStyle);
+    if (textStyle) textStyles.push(textStyle);
     
-    return textStyleArray;
+    return textStyles;
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <ActivityIndicator 
+          color={variant === 'outline' ? '#22C55E' : '#FFFFFF'} 
+          size="small" 
+        />
+      );
+    }
+
+    const content = [
+      icon && iconPosition === 'left' && <View key="leftIcon" style={styles.iconLeft}>{icon}</View>,
+      <Text key="text" style={getTextStyle()}>{title}</Text>,
+      icon && iconPosition === 'right' && <View key="rightIcon" style={styles.iconRight}>{icon}</View>
+    ];
+
+    return (
+      <View style={styles.contentContainer}>
+        {content}
+      </View>
+    );
   };
 
   return (
@@ -73,74 +100,80 @@ export default function Button({
       disabled={disabled || loading}
       activeOpacity={0.8}
     >
-      {loading ? (
-        <ActivityIndicator 
-          color={variant === 'outline' ? '#22C55E' : '#FFFFFF'} 
-          size="small" 
-        />
-      ) : (
-        <Text style={getTextStyle()}>{title}</Text>
-      )}
+      {renderContent()}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 12,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-  },
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  } as ViewStyle,
   primaryButton: {
     backgroundColor: '#22C55E',
-  },
+  } as ViewStyle,
   secondaryButton: {
-    backgroundColor: '#F8FAFC',
-  },
+    backgroundColor: '#F3F4F6',
+  } as ViewStyle,
   outlineButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#22C55E',
-  },
+  } as ViewStyle,
   smallButton: {
     paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
+    paddingHorizontal: 12,
+  } as ViewStyle,
   mediumButton: {
     paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
+    paddingHorizontal: 16,
+  } as ViewStyle,
   largeButton: {
     paddingVertical: 16,
-    paddingHorizontal: 32,
-  },
+    paddingHorizontal: 24,
+  } as ViewStyle,
   disabledButton: {
-    backgroundColor: '#E2E8F0',
-    borderColor: '#E2E8F0',
-  },
+    opacity: 0.5,
+  } as ViewStyle,
+  contentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  } as ViewStyle,
+  iconLeft: {
+    marginRight: 8,
+  } as ViewStyle,
+  iconRight: {
+    marginLeft: 8,
+  } as ViewStyle,
   buttonText: {
-    fontFamily: 'Poppins-Medium',
+    fontSize: 16,
     textAlign: 'center',
-  },
+    fontFamily: 'Poppins-SemiBold',
+  } as TextStyle,
   primaryText: {
     color: '#FFFFFF',
-  },
+  } as TextStyle,
   secondaryText: {
-    color: '#1E293B',
-  },
+    color: '#1F2937',
+  } as TextStyle,
   outlineText: {
     color: '#22C55E',
-  },
+  } as TextStyle,
   smallText: {
     fontSize: 14,
-  },
+  } as TextStyle,
   mediumText: {
     fontSize: 16,
-  },
+  } as TextStyle,
   largeText: {
     fontSize: 18,
-  },
+  } as TextStyle,
   disabledText: {
-    color: '#94A3B8',
-  },
+    opacity: 0.7,
+  } as TextStyle,
 });

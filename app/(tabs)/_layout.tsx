@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, Platform } from 'react-native';
-import { Chrome as Home, Calendar, BookOpen, ShoppingBag, User, Book, Settings } from 'lucide-react-native';
+import { Chrome as Home, ShoppingBag, User, Settings, Calendar, History } from 'lucide-react-native';
 import { UtensilsCrossed } from 'lucide-react-native';
 
 export default function TabLayout() {
@@ -26,25 +26,28 @@ export default function TabLayout() {
         name="meal-plans"
         options={{
           title: 'Meal Plans',
-          tabBarIcon: ({ color }) => <UtensilsCrossed size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Calendar size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: 'History',
+          tabBarIcon: ({ color }) => <History size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="shopping"
         options={{
           title: 'Shopping',
-          tabBarIcon: ({ color, size }) => (
-            <ShoppingBag size={size} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <ShoppingBag size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <User size={size} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <User size={24} color={color} />,
         }}
       />
       <Tabs.Screen

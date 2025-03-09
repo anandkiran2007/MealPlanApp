@@ -60,7 +60,9 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   leftContainer: {
-    width: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   rightContainer: {
     width: 40,
@@ -69,9 +71,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     color: '#1E293B',
-    textAlign: 'center',
     flex: 1,
     fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
+    flexShrink: 1,
+    marginLeft: 12,
   },
   backButton: {
     padding: 4,

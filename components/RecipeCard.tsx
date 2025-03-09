@@ -53,17 +53,20 @@ export function RecipeCard({ recipe, onPress, mealType }: RecipeCardProps) {
         </View>
 
         <View style={styles.nutritionContainer}>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Protein</Text>
-            <Text style={styles.nutritionValue}>{recipe.nutrition.protein}</Text>
-          </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Carbs</Text>
-            <Text style={styles.nutritionValue}>{recipe.nutrition.carbs}</Text>
-          </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionLabel}>Fat</Text>
-            <Text style={styles.nutritionValue}>{recipe.nutrition.fat}</Text>
+          <Text style={styles.nutritionTitle}>Nutrition per serving:</Text>
+          <View style={styles.nutritionRow}>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionValue}>{recipe.nutrition.protein}</Text>
+              <Text style={styles.nutritionLabel}>Protein</Text>
+            </View>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionValue}>{recipe.nutrition.carbs}</Text>
+              <Text style={styles.nutritionLabel}>Carbs</Text>
+            </View>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionValue}>{recipe.nutrition.fat}</Text>
+              <Text style={styles.nutritionLabel}>Fat</Text>
+            </View>
           </View>
         </View>
 
@@ -135,17 +138,30 @@ const styles = StyleSheet.create({
     color: '#495057',
   },
   nutritionContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: 16,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  nutritionTitle: {
+    fontSize: 14,
+    color: '#6c757d',
+    marginBottom: 8,
+  },
+  nutritionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
   },
   nutritionItem: {
     alignItems: 'center',
+    paddingHorizontal: 8,
   },
   nutritionLabel: {
     fontSize: 12,
     color: '#6c757d',
-    marginBottom: 4,
+    marginTop: 2,
   },
   nutritionValue: {
     fontSize: 14,
